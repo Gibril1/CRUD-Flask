@@ -1,7 +1,8 @@
-from crypt import methods
+
 from flask import request, jsonify
 from rest import db, bcrypt, app
 from rest.models import User, user_schema, users_schema, Products, product_schema, products_schema
+from .auth_middleware import token_required_
 
 import jwt
 import datetime
@@ -48,7 +49,7 @@ def login():
     email_address = request.json["email_address"]
     password = request.json["password"]
 
-    if email_address == "" or password == "":
+    if not email_address or not password:
         response["error_message"] = "Please enter all fields"
         return response, 400
     
@@ -63,7 +64,8 @@ def login():
         response["error_message"] = "Invalid Credentials"
 
 @app.route('/create', methods = ['POST'])
-def create_product():
+@token_required_
+def create_product(current_user):
     response = {
 
         "data": {},
