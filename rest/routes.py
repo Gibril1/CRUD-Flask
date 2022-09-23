@@ -1,3 +1,4 @@
+from crypt import methods
 from flask import request, jsonify
 from rest import db, bcrypt, app
 from rest.models import User, user_schema, users_schema, Products, product_schema, products_schema
@@ -94,19 +95,24 @@ def update_product(id):
         "error_message": {}
     }
     product = Products.query.filter_by(id=id).first()
-    name = request.json['name']
-    price = request.json['price']
-    quantity = request.json['quantity']
+    if product:
+        name = request.json['name']
+        price = request.json['price']
+        quantity = request.json['quantity']
 
-    product.name = name
-    product.price = price
-    product.quantity = quantity
+        product.name = name
+        product.price = price
+        product.quantity = quantity
 
-    db.session.commit()
+        db.session.commit()
 
-    product = product_schema.dump(product)
-    response["data"] = product
-    return response, 200
+        product = product_schema.dump(product)
+        response["data"] = product
+        return response, 200
+
+    else:
+        response["error_message"] = 'Product does not exist'
+        return response, 404
 
 @app.route('/delete/<int:id>', methods=['DELETE'])
 def delete_product(id):
@@ -116,14 +122,46 @@ def delete_product(id):
         "error_message": {}
     }
     product = Products.query.filter_by(id=id).first()
-    
-    
-    db.session.delete(product)
-    db.session.commit()
+    if product:
+        db.session.delete(product)
+        db.session.commit()
+        response["data"] = product.id
+        return response, 200
+
+    else:
+        response['error_message'] = 'Product does not exist'
+        return response, 404
+
 
     
-    response["data"] = product.id
+    
+@app.route('/view/<int:id>', methods = ['GET'])
+def view_product(id):
+    response = {
+        "data": {},
+        "error_message":""
+    }
+
+    product = Products.query.get(id=id)
+    if product:
+        product = product_schema.dump(product)
+        response["data"] = product
+        return response, 200
+
+    else:
+        response["error_message"] = "Product does not exist"
+        return response, 404
+
+@app.route('/views', methods=['GET'])
+def all_products():
+    response = {
+        "data": {},
+        "error_message": ""
+    }
+
+    products = Products.query.all()
+    products = products_schema.dump(products)
+    response["data"] = products
     return response, 200
-
 
     
